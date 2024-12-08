@@ -6,27 +6,11 @@ use std::collections::HashSet;
 
 fn main() {
 
-    match env::var("PART") {
-        Ok(val) => {
-            match val.as_str().parse().expect("Could not parse environment variable as an integer") {
-                1 => {
-                    println!("Starting part 1...")
-                },
-                2 => {
-                    println!("Starting part 2...");
-                    // create hashmap for storing the index of right addresses
-                    let mut right_addresses_index: HashMap<i32, i32> = HashMap::new();
-                    let mut right_addresses_counter: Vec<i32> = Vec::new();
-                },
-                _ => {
-                    println!("Got PATH of '{val}'. Expected '1' or '2'")
-                }
-            }
-        },
-        Err(_e) => {
-            panic!("Could not find the environment variable PART: Please set it to either '1' or '2'")
-        }
-    }
+    const PART: i32 = 2;
+
+    // create hashmap for storing the index of right addresses
+    let mut right_addresses_index: HashMap<i32, i32> = HashMap::new();
+    let mut right_addresses_counter: Vec<i32> = Vec::new();
 
     let file_contents = fs::read_to_string("assets/input.txt").expect(
         "Was not able to read the file"
@@ -51,7 +35,23 @@ fn main() {
         );
         right_addresses.push(
             right_parsed
-        )
+        );
+
+        if PART == 2 {
+            let addresses_size = right_addresses_index.len() as i32;
+            if !right_addresses_index.contains_key(&right_parsed) {
+                right_addresses_index.insert(
+                    right_parsed, addresses_size
+                );
+                right_addresses_counter.push(1);
+            } else {
+                let index = *right_addresses_index.get(&right_parsed).expect(
+                    "Expected to get a value from the hashmap"
+                ) as usize;
+                println!("Incrementing index={index}");
+                right_addresses_counter[index] += 1;
+            }
+        }
     }
 
     left_addresses.sort();
@@ -60,8 +60,25 @@ fn main() {
     let mut total_distance = 0;
 
     for (left, right) in zip(left_addresses, right_addresses) {
-        let diff = (right - left).abs();
-        total_distance = total_distance + diff;
+        if PART == 1 {
+            let diff = (right - left).abs();
+            total_distance = total_distance + diff;
+        } else {
+            println!("Looking to see if {left} in right addresses..");
+            let left_number_index = *right_addresses_index.get(
+                &left
+            ).unwrap_or(&-1);
+            let mut num_occurances = 0;
+            if left_number_index != -1 {
+                num_occurances = right_addresses_counter[
+                    left_number_index as usize
+                ];
+            }
+            let diff = left * num_occurances;
+            total_distance += diff;
+            println!("{left} appears {num_occurances} times in right");
+        }
+
     }
 
     println!("The total distance is: {total_distance}")
